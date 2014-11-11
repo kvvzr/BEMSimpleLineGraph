@@ -54,6 +54,8 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     
     /// All of the X-Axis Labels
     NSMutableArray *xAxisLabels;
+    
+    CGFloat maxValue, minValue;
 }
 
 /// The vertical line which appears when the user drags across the graph
@@ -176,6 +178,8 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     
     // Get the number of points in the graph
     [self layoutNumberOfPoints];
+    
+    maxValue = nanf(NULL); minValue = nanf(NULL);
     
     if (numberOfPoints <= 1) {
         return;
@@ -1047,34 +1051,37 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     if ([self.delegate respondsToSelector:@selector(maxValueForLineGraph:)]) {
         return [self.delegate maxValueForLineGraph:self];
     } else {
-        CGFloat dotValue;
-        CGFloat maxValue = -FLT_MAX;
-        
-        @autoreleasepool {
-            for (int i = 0; i < numberOfPoints; i++) {
-                if ([self.dataSource respondsToSelector:@selector(lineGraph:valueForPointAtIndex:)]) {
-                    dotValue = [self.dataSource lineGraph:self valueForPointAtIndex:i];
+        if (isnan(maxValue)) {
+            CGFloat dotValue;
+            maxValue = -FLT_MAX;
+            
+            @autoreleasepool {
+                for (int i = 0; i < numberOfPoints; i++) {
+                    if ([self.dataSource respondsToSelector:@selector(lineGraph:valueForPointAtIndex:)]) {
+                        dotValue = [self.dataSource lineGraph:self valueForPointAtIndex:i];
+                        
+                    } else if ([self.delegate respondsToSelector:@selector(valueForIndex:)]) {
+                        [self printDeprecationWarningForOldMethod:@"valueForIndex:" andReplacementMethod:@"lineGraph:valueForPointAtIndex:"];
+                        
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+                        dotValue = [self.delegate valueForIndex:i];
+    #pragma clang diagnostic pop
+                        
+                    } else if ([self.delegate respondsToSelector:@selector(lineGraph:valueForPointAtIndex:)]) {
+                        [self printDeprecationAndUnavailableWarningForOldMethod:@"lineGraph:valueForPointAtIndex:"];
+                        NSException *exception = [NSException exceptionWithName:@"Implementing Unavailable Delegate Method" reason:@"lineGraph:valueForPointAtIndex: is no longer available on the delegate. It must be implemented on the data source." userInfo:nil];
+                        [exception raise];
+                        
+                    } else dotValue = 0;
                     
-                } else if ([self.delegate respondsToSelector:@selector(valueForIndex:)]) {
-                    [self printDeprecationWarningForOldMethod:@"valueForIndex:" andReplacementMethod:@"lineGraph:valueForPointAtIndex:"];
-                    
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-                    dotValue = [self.delegate valueForIndex:i];
-#pragma clang diagnostic pop
-                    
-                } else if ([self.delegate respondsToSelector:@selector(lineGraph:valueForPointAtIndex:)]) {
-                    [self printDeprecationAndUnavailableWarningForOldMethod:@"lineGraph:valueForPointAtIndex:"];
-                    NSException *exception = [NSException exceptionWithName:@"Implementing Unavailable Delegate Method" reason:@"lineGraph:valueForPointAtIndex: is no longer available on the delegate. It must be implemented on the data source." userInfo:nil];
-                    [exception raise];
-                    
-                } else dotValue = 0;
-                
-                if (dotValue > maxValue) {
-                    maxValue = dotValue;
+                    if (dotValue > maxValue) {
+                        maxValue = dotValue;
+                    }
                 }
             }
         }
+        
         return maxValue;
     }
 }
@@ -1083,31 +1090,33 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     if ([self.delegate respondsToSelector:@selector(minValueForLineGraph:)]) {
         return [self.delegate minValueForLineGraph:self];
     } else {
-        CGFloat dotValue;
-        CGFloat minValue = INFINITY;
-        
-        @autoreleasepool {
-            for (int i = 0; i < numberOfPoints; i++) {
-                if ([self.dataSource respondsToSelector:@selector(lineGraph:valueForPointAtIndex:)]) {
-                    dotValue = [self.dataSource lineGraph:self valueForPointAtIndex:i];
+        if (isnan(minValue)) {
+            CGFloat dotValue;
+            minValue = INFINITY;
+            
+            @autoreleasepool {
+                for (int i = 0; i < numberOfPoints; i++) {
+                    if ([self.dataSource respondsToSelector:@selector(lineGraph:valueForPointAtIndex:)]) {
+                        dotValue = [self.dataSource lineGraph:self valueForPointAtIndex:i];
+                        
+                    } else if ([self.delegate respondsToSelector:@selector(valueForIndex:)]) {
+                        [self printDeprecationWarningForOldMethod:@"valueForIndex:" andReplacementMethod:@"lineGraph:valueForPointAtIndex:"];
+                        
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+                        dotValue = [self.delegate valueForIndex:i];
+    #pragma clang diagnostic pop
+                        
+                    } else if ([self.delegate respondsToSelector:@selector(lineGraph:valueForPointAtIndex:)]) {
+                        [self printDeprecationAndUnavailableWarningForOldMethod:@"lineGraph:valueForPointAtIndex:"];
+                        NSException *exception = [NSException exceptionWithName:@"Implementing Unavailable Delegate Method" reason:@"lineGraph:valueForPointAtIndex: is no longer available on the delegate. It must be implemented on the data source." userInfo:nil];
+                        [exception raise];
+                        
+                    } else dotValue = 0;
                     
-                } else if ([self.delegate respondsToSelector:@selector(valueForIndex:)]) {
-                    [self printDeprecationWarningForOldMethod:@"valueForIndex:" andReplacementMethod:@"lineGraph:valueForPointAtIndex:"];
-                    
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-                    dotValue = [self.delegate valueForIndex:i];
-#pragma clang diagnostic pop
-                    
-                } else if ([self.delegate respondsToSelector:@selector(lineGraph:valueForPointAtIndex:)]) {
-                    [self printDeprecationAndUnavailableWarningForOldMethod:@"lineGraph:valueForPointAtIndex:"];
-                    NSException *exception = [NSException exceptionWithName:@"Implementing Unavailable Delegate Method" reason:@"lineGraph:valueForPointAtIndex: is no longer available on the delegate. It must be implemented on the data source." userInfo:nil];
-                    [exception raise];
-                    
-                } else dotValue = 0;
-                
-                if (dotValue < minValue) {
-                    minValue = dotValue;
+                    if (dotValue < minValue) {
+                        minValue = dotValue;
+                    }
                 }
             }
         }
@@ -1116,8 +1125,8 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
 }
 
 - (CGFloat)yPositionForDotValue:(CGFloat)dotValue {
-    CGFloat maxValue = [self maxValue]; // Biggest Y-axis value from all the points.
-    CGFloat minValue = [self minValue]; // Smallest Y-axis value from all the points.
+    CGFloat max = [self maxValue]; // Biggest Y-axis value from all the points.
+    CGFloat min = [self minValue]; // Smallest Y-axis value from all the points.
     
     CGFloat positionOnYAxis; // The position on the Y-axis of the point currently being created.
     CGFloat padding = self.frame.size.height/2;
@@ -1137,7 +1146,7 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
         }
     }
     
-    if (minValue == maxValue && self.autoScaleYAxis == YES) positionOnYAxis = self.frame.size.height/2;
+    if (min == max && self.autoScaleYAxis == YES) positionOnYAxis = self.frame.size.height/2;
     else if (self.autoScaleYAxis == YES) positionOnYAxis = ((self.frame.size.height - padding/2) - ((dotValue - minValue) / ((maxValue - minValue) / (self.frame.size.height - padding)))) + self.XAxisLabelYOffset/2;
     else positionOnYAxis = ((self.frame.size.height) - dotValue);
     
